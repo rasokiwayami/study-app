@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #12121E;
+    --surface:  #1E1E30;
+    --surface2: #252540;
+    --accent:   #5B8DEF;
+    --accent-d: #4A7CE0;
+    --danger:   #FF6B6B;
+    --danger-d: #E05555;
+    --success:  #5BC47F;
+    --success-d:#4AAD6D;
+    --text1:    #EAEAF2;
+    --text2:    #8A8AA8;
+    --border:   #2E2E4A;
+    --streak:   #FFB347;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text1);
+    font-family: 'Yu Gothic UI', 'Hiragino Sans', 'Meiryo', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── ヘッダー ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 1.25rem; font-weight: 700; }
+  header span { font-size: 0.9rem; color: var(--text2); }
+
+  /* ── タブ ── */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .tab-btn {
+    padding: 12px 28px;
+    background: var(--surface2);
+    color: var(--text2);
+    border: none;
+    font: 700 1rem 'Yu Gothic UI', sans-serif;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .tab-btn.active { background: var(--surface); color: var(--text1); }
+  .tab-btn:hover:not(.active) { color: var(--text1); }
+
+  /* ── タブコンテンツ ── */
+  .tab-content { display: none; flex: 1; }
+  .tab-content.active { display: flex; flex-direction: column; }
+
+  /* ── タイマータブ ── */
+  #tab-timer .inner {
+    display: flex;
+    gap: 0;
+    flex: 1;
+    padding: 20px 20px 16px;
+    gap: 16px;
+  }
+
+  /* 科目リスト */
+  .subject-panel {
+    width: 230px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 12px;
+  }
+  .subject-panel h2 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 16px 16px 8px;
+    color: var(--text1);
+  }
+  .subject-panel hr { border: none; border-top: 1px solid var(--border); margin: 0 16px; }
+  #subject-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 0;
+    list-style: none;
+  }
+  #subject-list li {
+    padding: 9px 16px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    border-radius: 4px;
+    margin: 2px 8px;
+    transition: background .1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #subject-list li:hover { background: var(--surface2); }
+  #subject-list li.selected { background: var(--accent); color: #fff; }
+  #subject-list li .dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .subject-panel hr.sep { margin-top: 6px; }
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px 0;
+  }
+  .btn {
+    flex: 1;
+    border: none;
+    border-radius: 5px;
+    padding: 7px 6px;
+    font: 700 0.82rem 'Yu Gothic UI', sans-serif;
+    cursor: pointer;
+    transition: filter .15s;
+  }
+  .btn:hover { filter: brightness(1.1); }
+  .btn-accent   { background: var(--accent);   color: #fff; }
+  .btn-danger   { background: var(--danger);   color: #fff; }
+  .btn-muted    { background: var(--surface2); color: var(--text2); }
+
+  /* タイマー右側 */
+  .timer-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .streak-card {
+    background: var(--surface2);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--text2);
+  }
+  .streak-card.active { color: var(--streak); }
+
+  #lbl-subject {
+    font-size: 1.1rem;
+    color: var(--text2);
+    text-align: center;
+  }
+
+  .timer-card {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+  }
+  #lbl-timer {
+    font-size: 3.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #btn-toggle {
+    width: 200px;
+    padding: 14px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    margin: 0 auto;
+    display: block;
+    background: var(--success);
+    color: #fff;
+    transition: filter .15s;
+  }
+  #btn-toggle:hover { filter: brightness(1.1); }
+  #btn-toggle.running { background: var(--danger); }
+
+  /* 今日の集計 */
+  .today-section h3 {
+    font-size: 0.88rem;
+    color: var(--text2);
+    margin-bottom: 6px;
+    font-weight: 700;
+  }
+  .today-card {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+  .today-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+  }
+  .today-row .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .today-row .name { flex: 1; font-size: 0.93rem; }
+  .today-row .time { font-size: 0.93rem; font-weight: 700; }
+  .progress-wrap { padding: 2px 0 4px 17px; }
+  .progress-bar-bg {
+    background: var(--surface2);
+    border-radius: 3px;
+    height: 5px;
+    width: 200px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .progress-bar-fill { height: 5px; border-radius: 3px; }
+  .goal-lbl { font-size: 0.78rem; color: var(--text2); margin-left: 8px; }
+  .today-sep { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
+  .today-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 0;
+  }
+  .today-total .label { font-size: 0.95rem; font-weight: 700; }
+  .today-total .total-time { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .empty-msg { color: var(--text2); font-size: 0.9rem; text-align: center; padding: 8px 0; }
+
+  /* ── 履歴タブ ── */
+  #tab-history .inner { padding: 20px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+  #tab-history h2 { font-size: 1.05rem; font-weight: 700; }
+  .table-wrap { flex: 1; overflow-y: auto; border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 10px 14px;
+    text-align: left;
+    position: sticky; top: 0;
+  }
+  tbody tr { background: var(--surface); }
+  tbody tr:nth-child(even) { background: var(--surface2); }
+  tbody td { padding: 9px 14px; font-size: 0.9rem; color: var(--text1); }
+  tbody td:nth-child(1), tbody td:nth-child(3) { text-align: center; }
+
+  /* ── グラフタブ ── */
+  #tab-graph .inner { padding: 20px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+  .graph-header { display: flex; align-items: center; justify-content: space-between; }
+  .graph-header h2 { font-size: 1.05rem; font-weight: 700; }
+  .mode-btns { display: flex; gap: 6px; }
+  .mode-btn {
+    border: none;
+    border-radius: 5px;
+    padding: 5px 18px;
+    font: 700 0.9rem 'Yu Gothic UI', sans-serif;
+    cursor: pointer;
+    background: var(--surface2);
+    color: var(--text2);
+    transition: background .15s, color .15s;
+  }
+  .mode-btn.active { background: var(--accent); color: #fff; }
+  #graph-canvas {
+    flex: 1;
+    background: var(--surface);
+    border-radius: 8px;
+    display: block;
+    width: 100%;
+  }
+
+  /* ── モーダル ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.55);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 28px 32px;
+    min-width: 320px;
+    max-width: 90vw;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .modal h3 { font-size: 1.05rem; color: var(--text1); }
+  .modal input[type=text], .modal input[type=number], .modal textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text1);
+    font: 1rem 'Yu Gothic UI', sans-serif;
+    padding: 9px 12px;
+    outline: none;
+  }
+  .modal input:focus, .modal textarea:focus { border-color: var(--accent); }
+  .modal textarea { resize: vertical; min-height: 70px; }
+  .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-btns .btn { flex: none; padding: 8px 20px; }
+
+  .color-grid { display: flex; gap: 10px; flex-wrap: wrap; }
+  .color-swatch {
+    width: 34px; height: 34px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: border-color .1s;
+  }
+  .color-swatch.selected { border-color: var(--text1); }
+
+  /* ── トースト ── */
+  #toast {
+    position: fixed;
+    bottom: 30px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    color: var(--text1);
+    padding: 10px 22px;
+    border-radius: 6px;
+    font-size: 0.92rem;
+    opacity: 0;
+    transition: opacity .3s;
+    pointer-events: none;
+    z-index: 200;
+  }
+  #toast.show { opacity: 1; }
+
+  /* スクロールバー */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Study Tracker</h1>
+  <span id="today-date"></span>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="timer">タイマー</button>
+  <button class="tab-btn" data-tab="history">履歴</button>
+  <button class="tab-btn" data-tab="graph">グラフ</button>
+</div>
+
+<!-- タイマータブ -->
+<div class="tab-content active" id="tab-timer">
+  <div class="inner">
+    <!-- 科目リスト -->
+    <div class="subject-panel">
+      <h2>科目リスト</h2>
+      <hr>
+      <ul id="subject-list"></ul>
+      <hr class="sep">
+      <div class="btn-row">
+        <button class="btn btn-accent" id="btn-add-subject">＋ 追加</button>
+        <button class="btn btn-danger" id="btn-del-subject">削除</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-muted" id="btn-set-goal">目標設定</button>
+        <button class="btn btn-muted" id="btn-change-color">色変更</button>
+      </div>
+    </div>
+
+    <!-- タイマー本体 -->
+    <div class="timer-main">
+      <div class="streak-card" id="streak-card">連続 0 日  ─  今日から始めよう！</div>
+      <div id="lbl-subject">科目を選択してください</div>
+      <div class="timer-card">
+        <div id="lbl-timer">00:00:00</div>
+      </div>
+      <button id="btn-toggle">開始</button>
+      <div class="today-section">
+        <h3>今日の勉強時間</h3>
+        <div class="today-card" id="today-card">
+          <p class="empty-msg">まだ記録がありません</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 履歴タブ -->
+<div class="tab-content" id="tab-history">
+  <div class="inner">
+    <h2>学習履歴</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:110px">日付</th>
+            <th>科目</th>
+            <th style="width:110px">勉強時間</th>
+            <th>メモ</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- グラフタブ -->
+<div class="tab-content" id="tab-graph">
+  <div class="inner">
+    <div class="graph-header">
+      <h2>勉強時間グラフ</h2>
+      <div class="mode-btns">
+        <button class="mode-btn active" id="btn-week">週</button>
+        <button class="mode-btn" id="btn-month">月</button>
+      </div>
+    </div>
+    <canvas id="graph-canvas"></canvas>
+  </div>
+</div>
+
+<!-- モーダル: 科目追加 -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal">
+    <h3>科目を追加</h3>
+    <input type="text" id="input-subject-name" placeholder="科目名を入力">
+    <div class="modal-btns">
+      <button class="btn btn-muted" id="modal-add-cancel">キャンセル</button>
+      <button class="btn btn-accent" id="modal-add-ok">追加</button>
+    </div>
+  </div>
+</div>
+
+<!-- モーダル: 目標設定 -->
+<div class="modal-overlay" id="modal-goal">
+  <div class="modal">
+    <h3 id="modal-goal-title">目標時間設定</h3>
+    <label style="font-size:.88rem;color:var(--text2)">1日の目標時間（分）：0 で目標なし</label>
+    <input type="number" id="input-goal-min" min="0" max="1440" value="0">
+    <div class="modal-btns">
+      <button class="btn btn-muted" id="modal-goal-cancel">キャンセル</button>
+      <button class="btn btn-accent" id="modal-goal-ok">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- モーダル: 色変更 -->
+<div class="modal-overlay" id="modal-color">
+  <div class="modal">
+    <h3>科目の色を選択</h3>
+    <div class="color-grid" id="color-grid"></div>
+    <div class="modal-btns">
+      <button class="btn btn-muted" id="modal-color-cancel">キャンセル</button>
+      <button class="btn btn-accent" id="modal-color-ok">適用</button>
+    </div>
+  </div>
+</div>
+
+<!-- モーダル: メモ入力 -->
+<div class="modal-overlay" id="modal-memo">
+  <div class="modal">
+    <h3>メモ（省略可）</h3>
+    <textarea id="input-memo" placeholder="この学習セッションのメモ"></textarea>
+    <div class="modal-btns">
+      <button class="btn btn-accent" id="modal-memo-ok">記録する</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── 定数 ─────────────────────────────────────────────────────────────────────
+const COLORS = ["#5B8DEF","#FF6B6B","#5BC47F","#FFB347","#C77DFF","#56CFE1","#FF85A1","#FFD93D"];
+const BG       = "#12121E";
+const SURFACE  = "#1E1E30";
+const SURFACE2 = "#252540";
+const ACCENT   = "#5B8DEF";
+const DANGER   = "#FF6B6B";
+const SUCCESS  = "#5BC47F";
+const TEXT1    = "#EAEAF2";
+const TEXT2    = "#8A8AA8";
+const BORDER   = "#2E2E4A";
+
+// ── 状態 ─────────────────────────────────────────────────────────────────────
+let subjects = [];
+let selectedId = null;
+let selectedColor = ACCENT;
+let timerRunning = false;
+let timerStart = null;
+let timerInterval = null;
+let pendingColorChoice = null;
+
+// ── ユーティリティ ────────────────────────────────────────────────────────────
+function fmt(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  if (res.status === 204 || res.status === 201 && method === 'DELETE') return null;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || res.statusText);
+  }
+  if (res.status === 201 || res.status === 200) {
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
+  }
+  return null;
+}
+
+// ── 今日の日付 ────────────────────────────────────────────────────────────────
+(function() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const mo = d.getMonth() + 1;
+  const day = d.getDate();
+  document.getElementById('today-date').textContent = `${y}年${mo}月${day}日`;
+})();
+
+// ── タブ切り替え ──────────────────────────────────────────────────────────────
+const tabBtns = document.querySelectorAll('.tab-btn');
+const tabContents = document.querySelectorAll('.tab-content');
+tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.dataset.tab;
+    tabBtns.forEach(b => b.classList.toggle('active', b === btn));
+    tabContents.forEach(c => {
+      const active = c.id === `tab-${tab}`;
+      c.classList.toggle('active', active);
+    });
+    if (tab === 'history') loadHistory();
+    if (tab === 'graph') drawGraph();
+  });
+});
+
+// ── 科目リスト ────────────────────────────────────────────────────────────────
+async function loadSubjects() {
+  subjects = await api('GET', '/api/subjects');
+  renderSubjectList();
+}
+
+function renderSubjectList() {
+  const ul = document.getElementById('subject-list');
+  ul.innerHTML = '';
+  subjects.forEach(s => {
+    const li = document.createElement('li');
+    li.dataset.id = s.id;
+    if (s.id === selectedId) li.classList.add('selected');
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+    dot.style.background = s.color;
+    li.appendChild(dot);
+    li.appendChild(document.createTextNode(s.name));
+    li.style.color = s.id === selectedId ? '#fff' : s.color;
+    li.addEventListener('click', () => selectSubject(s.id));
+    ul.appendChild(li);
+  });
+}
+
+function selectSubject(id) {
+  if (timerRunning) return;
+  selectedId = id;
+  const s = subjects.find(x => x.id === id);
+  if (!s) return;
+  selectedColor = s.color;
+  document.getElementById('lbl-subject').textContent = s.name;
+  document.getElementById('lbl-subject').style.color = s.color;
+  document.getElementById('lbl-timer').style.color = s.color;
+  renderSubjectList();
+}
+
+// ── 科目追加 ──────────────────────────────────────────────────────────────────
+document.getElementById('btn-add-subject').addEventListener('click', () => {
+  document.getElementById('input-subject-name').value = '';
+  openModal('modal-add');
+});
+document.getElementById('modal-add-cancel').addEventListener('click', () => closeModal('modal-add'));
+document.getElementById('modal-add-ok').addEventListener('click', async () => {
+  const name = document.getElementById('input-subject-name').value.trim();
+  if (!name) return;
+  try {
+    await api('POST', '/api/subjects', { name });
+    closeModal('modal-add');
+    await loadSubjects();
+  } catch(e) {
+    showToast(e.message);
+  }
+});
+document.getElementById('input-subject-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('modal-add-ok').click();
+});
+
+// ── 科目削除 ──────────────────────────────────────────────────────────────────
+document.getElementById('btn-del-subject').addEventListener('click', async () => {
+  if (!selectedId) { showToast('削除する科目を選択してください'); return; }
+  if (timerRunning) { showToast('計測中の科目は削除できません'); return; }
+  const s = subjects.find(x => x.id === selectedId);
+  if (!confirm(`「${s.name}」とその記録を削除しますか？`)) return;
+  await api('DELETE', `/api/subjects/${selectedId}`);
+  selectedId = null;
+  selectedColor = ACCENT;
+  document.getElementById('lbl-subject').textContent = '科目を選択してください';
+  document.getElementById('lbl-subject').style.color = '';
+  document.getElementById('lbl-timer').style.color = ACCENT;
+  await loadSubjects();
+  await loadToday();
+});
+
+// ── 目標設定 ──────────────────────────────────────────────────────────────────
+document.getElementById('btn-set-goal').addEventListener('click', () => {
+  if (!selectedId) { showToast('目標を設定する科目を選択してください'); return; }
+  const s = subjects.find(x => x.id === selectedId);
+  document.getElementById('modal-goal-title').textContent = `目標時間設定 ─ ${s.name}`;
+  document.getElementById('input-goal-min').value = Math.round(s.goal_seconds / 60);
+  openModal('modal-goal');
+});
+document.getElementById('modal-goal-cancel').addEventListener('click', () => closeModal('modal-goal'));
+document.getElementById('modal-goal-ok').addEventListener('click', async () => {
+  const min = parseInt(document.getElementById('input-goal-min').value) || 0;
+  await api('PATCH', `/api/subjects/${selectedId}`, { goal_seconds: min * 60 });
+  closeModal('modal-goal');
+  await loadSubjects();
+  await loadToday();
+});
+
+// ── 色変更 ────────────────────────────────────────────────────────────────────
+document.getElementById('btn-change-color').addEventListener('click', () => {
+  if (!selectedId) { showToast('色を変更する科目を選択してください'); return; }
+  const s = subjects.find(x => x.id === selectedId);
+  pendingColorChoice = s.color;
+  buildColorGrid(s.color);
+  openModal('modal-color');
+});
+document.getElementById('modal-color-cancel').addEventListener('click', () => closeModal('modal-color'));
+document.getElementById('modal-color-ok').addEventListener('click', async () => {
+  if (!pendingColorChoice) { closeModal('modal-color'); return; }
+  await api('PATCH', `/api/subjects/${selectedId}`, { color: pendingColorChoice });
+  const s = subjects.find(x => x.id === selectedId);
+  if (s) {
+    selectedColor = pendingColorChoice;
+    document.getElementById('lbl-subject').style.color = pendingColorChoice;
+    document.getElementById('lbl-timer').style.color = pendingColorChoice;
+  }
+  closeModal('modal-color');
+  await loadSubjects();
+  await loadToday();
+});
+
+function buildColorGrid(current) {
+  const grid = document.getElementById('color-grid');
+  grid.innerHTML = '';
+  COLORS.forEach(c => {
+    const sw = document.createElement('div');
+    sw.className = 'color-swatch' + (c === current ? ' selected' : '');
+    sw.style.background = c;
+    sw.addEventListener('click', () => {
+      grid.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('selected'));
+      sw.classList.add('selected');
+      pendingColorChoice = c;
+    });
+    grid.appendChild(sw);
+  });
+}
+
+// ── タイマー ──────────────────────────────────────────────────────────────────
+document.getElementById('btn-toggle').addEventListener('click', () => {
+  if (!timerRunning) startTimer();
+  else stopTimer();
+});
+
+function startTimer() {
+  if (!selectedId) { showToast('計測する科目を選択してください'); return; }
+  timerRunning = true;
+  timerStart = Date.now();
+  const btn = document.getElementById('btn-toggle');
+  btn.textContent = '停止';
+  btn.classList.add('running');
+  timerInterval = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - timerStart) / 1000);
+    document.getElementById('lbl-timer').textContent = fmt(elapsed);
+  }, 500);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerRunning = false;
+  const elapsed = Math.floor((Date.now() - timerStart) / 1000);
+  document.getElementById('lbl-timer').textContent = '00:00:00';
+  const btn = document.getElementById('btn-toggle');
+  btn.textContent = '開始';
+  btn.classList.remove('running');
+  if (elapsed < 1) return;
+  // メモ入力へ
+  document.getElementById('input-memo').value = '';
+  openModal('modal-memo');
+  document.getElementById('modal-memo-ok').onclick = async () => {
+    const memo = document.getElementById('input-memo').value.trim();
+    await api('POST', '/api/records', { subject_id: selectedId, seconds: elapsed, memo });
+    closeModal('modal-memo');
+    const s = subjects.find(x => x.id === selectedId);
+    showToast(`${s ? s.name : ''} ─ ${fmt(elapsed)} を記録しました！`);
+    await loadToday();
+    await loadStreak();
+  };
+}
+
+// ── ストリーク ────────────────────────────────────────────────────────────────
+async function loadStreak() {
+  const { streak } = await api('GET', '/api/streak');
+  const el = document.getElementById('streak-card');
+  if (streak === 0) {
+    el.textContent = '連続 0 日  ─  今日から始めよう！';
+    el.classList.remove('active');
+  } else if (streak === 1) {
+    el.textContent = '連続 1 日継続中  ─  いいスタート！';
+    el.classList.add('active');
+  } else {
+    el.textContent = `連続 ${streak} 日継続中！`;
+    el.classList.add('active');
+  }
+}
+
+// ── 今日の集計 ────────────────────────────────────────────────────────────────
+async function loadToday() {
+  const data = await api('GET', '/api/today');
+  const card = document.getElementById('today-card');
+  card.innerHTML = '';
+  if (!data.length) {
+    card.innerHTML = '<p class="empty-msg">まだ記録がありません</p>';
+    return;
+  }
+  const total = data.reduce((acc, r) => acc + r.seconds, 0);
+  data.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'today-row';
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+    dot.style.background = r.color;
+    const nameEl = document.createElement('span');
+    nameEl.className = 'name';
+    nameEl.textContent = r.name;
+    const timeEl = document.createElement('span');
+    timeEl.className = 'time';
+    timeEl.style.color = r.color;
+    row.appendChild(dot);
+    row.appendChild(nameEl);
+    if (r.goal_seconds > 0) {
+      const pct = Math.min(r.seconds / r.goal_seconds, 1.0);
+      timeEl.textContent = `${fmt(r.seconds)}  ${Math.round(pct * 100)}%`;
+      row.appendChild(timeEl);
+      card.appendChild(row);
+      const pw = document.createElement('div');
+      pw.className = 'progress-wrap';
+      const bg = document.createElement('div');
+      bg.className = 'progress-bar-bg';
+      const fill = document.createElement('div');
+      fill.className = 'progress-bar-fill';
+      fill.style.background = r.color;
+      fill.style.width = `${Math.round(pct * 200)}px`;
+      bg.appendChild(fill);
+      const gl = document.createElement('span');
+      gl.className = 'goal-lbl';
+      const gh = Math.floor(r.goal_seconds / 3600);
+      const gm = Math.floor((r.goal_seconds % 3600) / 60);
+      gl.textContent = `目標 ${gh}h${String(gm).padStart(2,'0')}m`;
+      pw.appendChild(bg);
+      pw.appendChild(gl);
+      card.appendChild(pw);
+    } else {
+      timeEl.textContent = fmt(r.seconds);
+      row.appendChild(timeEl);
+      card.appendChild(row);
+    }
+  });
+  const sep = document.createElement('hr');
+  sep.className = 'today-sep';
+  card.appendChild(sep);
+  const tot = document.createElement('div');
+  tot.className = 'today-total';
+  tot.innerHTML = `<span class="label">合計</span><span class="total-time">${fmt(total)}</span>`;
+  card.appendChild(tot);
+}
+
+// ── 履歴 ─────────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  const data = await api('GET', '/api/history');
+  const tbody = document.getElementById('history-body');
+  tbody.innerHTML = '';
+  data.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.date}</td><td>${r.name}</td><td>${r.time_str}</td><td>${r.memo || ''}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── グラフ ────────────────────────────────────────────────────────────────────
+let graphMode = 'week';
+
+document.getElementById('btn-week').addEventListener('click', () => {
+  graphMode = 'week';
+  document.getElementById('btn-week').classList.add('active');
+  document.getElementById('btn-month').classList.remove('active');
+  drawGraph();
+});
+document.getElementById('btn-month').addEventListener('click', () => {
+  graphMode = 'month';
+  document.getElementById('btn-month').classList.add('active');
+  document.getElementById('btn-week').classList.remove('active');
+  drawGraph();
+});
+
+async function drawGraph() {
+  const canvas = document.getElementById('graph-canvas');
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = rect.height * devicePixelRatio;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  const W = rect.width;
+  const H = rect.height;
+
+  const endpoint = graphMode === 'week' ? '/api/graph/week' : '/api/graph/month';
+  const [data, dateColors] = await Promise.all([
+    api('GET', endpoint),
+    api('GET', '/api/date-colors'),
+  ]);
+
+  ctx.fillStyle = SURFACE;
+  ctx.fillRect(0, 0, W, H);
+
+  const WEEK_DAYS = ['月','火','水','木','金','土','日'];
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  const labels = data.map(({ date: d }) => {
+    if (graphMode === 'week') {
+      const dt = new Date(d + 'T00:00:00');
+      return WEEK_DAYS[dt.getDay() === 0 ? 6 : dt.getDay() - 1] + '\n' + d.slice(5);
+    }
+    return String(parseInt(d.slice(8)));
+  });
+
+  const padL = 56, padR = 20, padT = 28, padB = 52;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  const maxSec = Math.max(...data.map(d => d.seconds), 0);
+  const maxH = maxSec / 3600 || 1;
+  let yMaxH = 1;
+  for (const t of [1,2,3,4,5,6,8,10,12,16,20,24]) {
+    if (maxH <= t) { yMaxH = t; break; }
+    yMaxH = Math.ceil(maxH) + 1;
+  }
+  const yMaxSec = yMaxH * 3600;
+
+  // グリッド & Y軸ラベル
+  ctx.font = `${10 * (W / 700)}px 'Yu Gothic UI', sans-serif`;
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i <= 4; i++) {
+    const y = padT + chartH - (chartH * i / 4);
+    ctx.strokeStyle = BORDER;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padL, y); ctx.lineTo(padL + chartW, y);
+    ctx.stroke();
+    const secVal = Math.round(yMaxSec * i / 4);
+    const hv = Math.floor(secVal / 3600);
+    const mv = Math.floor((secVal % 3600) / 60);
+    const lbl = mv === 0 ? `${hv}h` : `${hv}:${String(mv).padStart(2,'0')}`;
+    ctx.fillStyle = TEXT2;
+    ctx.textAlign = 'right';
+    ctx.fillText(lbl, padL - 6, y);
+  }
+
+  const n = data.length;
+  if (n === 0) return;
+
+  const barAreaW = chartW / n;
+  const barW = Math.max(4, barAreaW * (n <= 14 ? 0.6 : 0.75));
+  const fontSize = n <= 14 ? 10 : 8;
+  ctx.font = `${fontSize}px 'Yu Gothic UI', sans-serif`;
+
+  data.forEach(({ date: d, seconds: sec }, i) => {
+    const cx = padL + barAreaW * i + barAreaW / 2;
+    const barH = Math.round(chartH * sec / yMaxSec);
+    const x0 = cx - barW / 2;
+    const x1 = cx + barW / 2;
+    const yTop = padT + chartH - barH;
+    const yBot = padT + chartH;
+
+    const color = d === todayStr ? SUCCESS : (dateColors[d] || ACCENT);
+
+    if (barH > 0) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(x0, yTop, barW, barH, [4, 4, 0, 0]);
+      ctx.fill();
+    }
+
+    // X軸ラベル
+    ctx.fillStyle = TEXT2;
+    ctx.textAlign = 'center';
+    const lines = labels[i].split('\n');
+    lines.forEach((line, j) => {
+      ctx.fillText(line, cx, padT + chartH + 10 + j * 14);
+    });
+
+    // 値ラベル
+    if (sec > 0 && barH > 14) {
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const vs = h > 0 ? `${h}h${String(m).padStart(2,'0')}m` : `${m}m`;
+      ctx.fillStyle = TEXT1;
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(vs, cx, yTop - 2);
+      ctx.textBaseline = 'middle';
+    }
+  });
+
+  ctx.strokeStyle = BORDER;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT + chartH); ctx.lineTo(padL + chartW, padT + chartH);
+  ctx.stroke();
+}
+
+window.addEventListener('resize', () => {
+  if (document.getElementById('tab-graph').classList.contains('active')) drawGraph();
+});
+
+// ── モーダル ──────────────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ── 初期化 ────────────────────────────────────────────────────────────────────
+(async () => {
+  await loadSubjects();
+  await loadStreak();
+  await loadToday();
+})();
+</script>
+</body>
+</html>
