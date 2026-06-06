@@ -1,0 +1,65 @@
+project:
+  repo: rasokiwayami/study-app
+  type: portfolio_product_candidate
+  domain: study_tracking
+  orchestrator: project_orchestrator
+  primary_goal: Local study tracking app with Flask and Tkinter surfaces
+  default_branch: main
+  visibility: private_or_public_per_current_remote
+
+runtime:
+  local_only: true
+  deployment: render_configured_but_not_default_action
+  languages:
+    - python
+  package_managers:
+    - pip
+  operating_environment:
+    - Mac local operation under /Users/sora/dev/study-app
+    - Legacy Windows/WSL operation remains a normal Python context
+
+authority:
+  global_default_band: A2
+  canonical_authority_registry: shieikan/jinsei/registries/AUTHORITY_MATRIX.md
+  forbidden:
+    - credential or token exposure
+    - local SQLite study records in tracked files
+    - external deployment without explicit approval
+    - public claims without review
+    - push without required Review Controller approval
+
+global_coding_department:
+  default_route:
+    - Executive Orchestrator
+    - Study App Project Orchestrator
+    - Implementation Planning Worker
+    - Implementation Worker
+    - Implementation Review Controller
+  queue_request_command: cd /Users/sora/dev/jinsei && python3 scripts/dispatch_codex_session.py --queue-request --project "Study App" --repo /Users/sora/dev/study-app
+  run_queue_command: cd /Users/sora/dev/jinsei && python3 scripts/dispatch_codex_session.py --from-queue --limit 3
+  push_review_check_command: cd /Users/sora/dev/jinsei && python3 scripts/dispatch_codex_session.py --check-push-review --project "Study App"
+  required_for:
+    - non_trivial_implementation
+    - multi_file_changes
+    - database_or_ui_changes
+    - deploy_or_push_readiness
+
+verification:
+  default:
+    - python3 -m py_compile app.py study_app.py
+  formatting:
+    - git diff --check
+
+state:
+  ignored_runtime_dirs:
+    - __pycache__/
+    - .pytest_cache/
+    - output/
+  local_private_files:
+    - study_records.db
+  canonical_progress:
+    - AGENTS.md
+    - PROJECT_PROFILE.yaml
+    - app.py
+    - study_app.py
+    - templates/
