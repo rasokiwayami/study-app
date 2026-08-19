@@ -5,27 +5,23 @@ entry points. Treat Python source, templates, requirements, and
 `PROJECT_PROFILE.yaml` as the operating truth. README prose is secondary when it
 lags implementation.
 
-## Global Routing
+## Development Route
 
-For non-trivial implementation, route through Jinsei / Global Coding Department:
-
-```bash
-cd /Users/sora/dev/jinsei
-python3 scripts/dispatch_codex_session.py --queue-request --project "Study App" --repo /Users/sora/dev/study-app --operation-id <operation_id> --goal "<bounded goal>" --authority-band A2
-python3 scripts/dispatch_codex_session.py --from-queue --limit 3
-python3 scripts/dispatch_codex_session.py --check-push-review --project "Study App" --operation-id <operation_id>
-```
-
-Use Planning Worker, Implementation Worker, and Review Controller separation for
-multi-file changes, database behavior, UI changes, deployment readiness, or
-push readiness.
+For non-trivial implementation, use the parent-owned route:
+Plan -> Work -> independent Sol max Review. The central instructions are
+`/Users/sora/dev/jinsei/CODEX_GLOBAL_AGENTS.md`, and the deterministic task,
+authority, evidence, and Git boundary is `/Users/sora/dev/jinsei/bin/jinsei`.
+The Codex parent owns model launch; the current TaskIntent, exact worktree
+scope, and fresh verification/review evidence must bind to the current HEAD.
+Do not infer launch commands from this repository.
 
 ## Development Autonomy
 
 Development GitHub operations are L5 under Jinsei's
-`GITHUB_DEVOPS_AUTONOMY_POLICY.md` after this repo's verification and required
-Review Controller gates pass. This includes branch work, local commits, pushes
-to an existing approved remote, PR creation/update, and issue operations.
+`GITHUB_DEVOPS_AUTONOMY_POLICY.md` after this repo's verification and fresh
+independent Sol max review evidence bound to the current HEAD pass. This
+includes branch work, local commits, pushes to an existing approved remote, PR
+creation/update, and issue operations.
 
 Public deployment, repository visibility changes, billing or paid services,
 secret mutation, production data mutation, public claims, and publication remain
