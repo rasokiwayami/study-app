@@ -14,6 +14,7 @@ project:
       - dev.local_edit
       - dev.local_test
       - dev.local_commit
+      - dev.github_push
     forbidden_actions:
       - dev.repo_create_visibility_deploy_or_publish
       - dev.secret_or_security_mutation
