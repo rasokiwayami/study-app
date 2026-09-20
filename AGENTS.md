@@ -1,4 +1,4 @@
-# Agent Guidelines
+# study-app/AGENTS.md
 
 This repository is a small local study tracking app with Flask and Tkinter
 entry points. Treat Python source, templates, requirements, and
